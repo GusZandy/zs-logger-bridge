@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>zs-logger Bridge</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>zs-logger Bridge</h1>
+      <div class="status">
+        <span id="status-dot" class="dot"></span>
+        <span id="status-text">Stopped</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="panel">
+        <h2>Logger connection</h2>
+        <div class="field">
+          <label for="serverUrl">Server URL</label>
+          <input id="serverUrl" type="text" placeholder="https://logger.amatir.id" />
+        </div>
+        <div class="row">
+          <div class="field">
+            <label for="logsheetId">Logsheet ID</label>
+            <input id="logsheetId" type="text" placeholder="e.g. 42" />
+          </div>
+          <div class="field" style="flex: 2">
+            <label for="token">Ingest token</label>
+            <input id="token" type="password" placeholder="from the logsheet's Renew Token modal" />
+          </div>
+        </div>
+        <div class="hint">Find the logsheet ID and ingest token on the Logsheets page in the logger &mdash; the key icon opens the token.</div>
+      </section>
+
+      <section class="panel">
+        <h2>Sources</h2>
+        <div class="toggle-row">
+          <div>
+            <div>N1MM Logger+</div>
+            <div class="hint">Config &rarr; Configure Ports&hellip; &rarr; Broadcast Data &rarr; point "Contact info" at this PC.</div>
+          </div>
+          <div class="row" style="align-items: center; gap: 8px;">
+            <input id="n1mmEnabled" type="checkbox" />
+            <input id="n1mmPort" type="number" style="width: 80px" />
+          </div>
+        </div>
+        <div class="toggle-row">
+          <div>
+            <div>JTDX / WSJT-X</div>
+            <div class="hint">Settings &rarr; Reporting &rarr; enable UDP broadcast, pointed at this PC.</div>
+          </div>
+          <div class="row" style="align-items: center; gap: 8px;">
+            <input id="jtdxEnabled" type="checkbox" />
+            <input id="jtdxPort" type="number" style="width: 80px" />
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="saveBtn">Save settings</button>
+          <button id="startBtn" class="secondary">Start bridge</button>
+          <button id="stopBtn" class="secondary">Stop</button>
+          <button id="quitBtn" class="danger">Quit</button>
+        </div>
+      </section>
+
+      <section class="panel" style="flex: 1; display: flex; flex-direction: column;">
+        <h2>Activity</h2>
+        <div id="activity" class="activity"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>

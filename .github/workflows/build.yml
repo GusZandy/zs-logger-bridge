@@ -1,0 +1,61 @@
+name: Build
+
+# Builds the bridge for Windows and macOS on their native runners, since
+# Wails apps can't be reliably cross-compiled from Linux (they link a
+# platform webview). Push a tag like "v0.1.0" to also attach installers to
+# a GitHub Release; plain pushes/PRs just build and upload artifacts.
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            platform: windows/amd64
+            artifact: zs-logger-bridge-windows-amd64.exe
+            built-path: build/bin/zs-logger-bridge.exe
+          - os: macos-latest
+            platform: darwin/universal
+            artifact: zs-logger-bridge-macos.app.zip
+            built-path: build/bin/zs-logger-bridge.app
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.21"
+
+      - name: Install Wails CLI
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+      - name: go mod tidy
+        run: go mod tidy
+
+      - name: Build (Windows)
+        if: matrix.os == 'windows-latest'
+        run: wails build -platform ${{ matrix.platform }} -nsis
+
+      - name: Build (macOS)
+        if: matrix.os == 'macos-latest'
+        run: wails build -platform ${{ matrix.platform }}
+
+      - name: Zip macOS app
+        if: matrix.os == 'macos-latest'
+        run: ditto -c -k --sequesterRsrc --keepParent build/bin/zs-logger-bridge.app build/bin/${{ matrix.artifact }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: |
+            build/bin/${{ matrix.artifact }}
+            build/bin/*.exe
+            build/bin/*installer*.exe
