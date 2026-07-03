@@ -112,13 +112,13 @@ below about digital-mode reports).
   truncates defensively so uploads never get rejected outright, but if you
   want full-fidelity FT8/FT4 reports, bump `rst`/`sent_rst` to `max:5` in
   `BridgeIngestController::rules()` on the logger side.
-- **No system tray icon.** Closing the window hides it (the bridge keeps
-  listening) rather than quitting — use the in-app Quit button to actually
-  exit. A true tray icon (so it's not in the dock/taskbar at all) is a
+- **No system tray icon.** Closing the window quits the app (and stops the
+  bridge) like a normal Mac/Windows app — there's no "runs quietly in the
+  background after you close it" mode. If you want that, a true tray/menu
+  bar icon (no Dock/taskbar icon at all, Show/Quit from the tray) is a
   reasonable follow-up via `github.com/getlantern/systray`, but combining
   it with Wails needs care around macOS's main-thread requirement for
-  both libraries, so it was left out of this first pass rather than
-  shipped unverified.
+  both libraries, so it wasn't shipped unverified in this first pass.
 - **`contactreplace`/`contactdelete` from N1MM are ignored** (logged to
   the activity feed as "ignored in v1" but not acted on) — edits/deletes
   in N1MM won't currently propagate. Straightforward to add later: look up
