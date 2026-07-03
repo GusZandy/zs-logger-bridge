@@ -21,7 +21,16 @@ jobs:
             platform: windows/amd64
             artifact: zs-logger-bridge-windows-amd64.exe
             built-path: build/bin/zs-logger-bridge.exe
-          - os: macos-latest
+          # Pinned below macos-latest (which now means macOS 26 "Tahoe") on
+          # purpose: Tahoe's dyld strictly rejects Mach-O binaries missing
+          # an LC_UUID load command, and Go's built-in darwin linker doesn't
+          # emit one (golang/go#68678, still open). Wails' own "Generating
+          # bindings" step compiles and *runs* a small helper binary as part
+          # of every build, so it hits this immediately on Tahoe runners,
+          # before your app code is even involved. macos-15 (Sequoia)
+          # predates that stricter enforcement. Revisit this pin once the Go
+          # linker fix lands.
+          - os: macos-15
             platform: darwin/universal
             artifact: zs-logger-bridge-macos.app.zip
             built-path: build/bin/zs-logger-bridge.app
@@ -31,10 +40,13 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.21"
+          go-version: "1.23"
 
+      # Pinned to match go.mod's wails requirement exactly (see go.mod) --
+      # a CLI/library version mismatch prints a warning and can generate
+      # bindings inconsistent with the runtime you're actually linking.
       - name: Install Wails CLI
-        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.12.0
 
       - name: go mod tidy
         run: go mod tidy
@@ -44,11 +56,11 @@ jobs:
         run: wails build -platform ${{ matrix.platform }} -nsis
 
       - name: Build (macOS)
-        if: matrix.os == 'macos-latest'
+        if: matrix.os == 'macos-15'
         run: wails build -platform ${{ matrix.platform }}
 
       - name: Zip macOS app
-        if: matrix.os == 'macos-latest'
+        if: matrix.os == 'macos-15'
         run: ditto -c -k --sequesterRsrc --keepParent build/bin/zs-logger-bridge.app build/bin/${{ matrix.artifact }}
 
       - name: Upload artifact
@@ -59,3 +71,25 @@ jobs:
             build/bin/${{ matrix.artifact }}
             build/bin/*.exe
             build/bin/*installer*.exe
+
+  # Only runs when the push was a "v*" tag (e.g. v0.1.0), after both builds
+  # above succeed. Downloads everything build/upload-artifact collected and
+  # attaches it to a new GitHub Release named after the tag.
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create release and attach installers
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*
+          generate_release_notes: true
+          draft: false
+          prerelease: false
